@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35825.156 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MagicSafeShare", "MagicSafeShare\MagicSafeShare.csproj", "{95D95527-1349-4F33-A1E1-94C5B386BA54}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{95D95527-1349-4F33-A1E1-94C5B386BA54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{95D95527-1349-4F33-A1E1-94C5B386BA54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{95D95527-1349-4F33-A1E1-94C5B386BA54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{95D95527-1349-4F33-A1E1-94C5B386BA54}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D9A71C63-E743-4A70-94D0-428A8D531B55}
+	EndGlobalSection
+EndGlobal
