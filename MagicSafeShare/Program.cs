@@ -1,236 +1,215 @@
 ﻿using ImageMagick;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
-Console.WriteLine("请将需要处理的图片放入MSSresource文件夹");
-
-string folderName = "MSSresource";
-string folderPath = Path.Combine(Directory.GetCurrentDirectory(), folderName);
-
-// 创建文件夹
-if (!Directory.Exists(folderPath))
+class Program
 {
-    Directory.CreateDirectory(folderPath);
-    Console.WriteLine($"文件夹已创建: {folderPath}");
-}
-else
-{
-    Console.WriteLine($"文件夹已存在: {folderPath}");
-}
-
-// 打开文件夹
-OpenFolder(folderPath);
-
-string inputDirectory = folderPath;  // 输入文件夹路径
-string outputDirectory = Path.Combine(Directory.GetCurrentDirectory(), "MSSoutput");        // 输出文件夹路径
-
-// 如果输出文件夹不存在，则创建它
-if (!Directory.Exists(outputDirectory))
-{
-    Directory.CreateDirectory(outputDirectory);
-}
-
-// 获取输入目录下所有图像文件（假设支持的格式为 jpg, png, gif 等）
-string[] imageFiles = Directory.GetFiles(inputDirectory, "*.*", SearchOption.TopDirectoryOnly);
-
-Console.WriteLine("图片放好后，请输入相应数字继续");
-Console.WriteLine("【1】直接清除所有图像元数据，这包括位置，动态图片的动态视频部分等等");
-Console.WriteLine("【2】扫描并列出图像的元数据，进行进一步选择");
-
-
-string command = Console.ReadLine();
-
-if (command == "1")
-{
-    Console.WriteLine("开始处理图片");
-
-    foreach (var filePath in imageFiles)
+    static void Main()
     {
-        // 只处理图像文件（可以根据需要增加其他图像格式）
-        if (IsImageFile(filePath))
+        Console.WriteLine("请将需要处理的图片放入MSSresource文件夹");
+
+        string inputFolder = Path.Combine(Directory.GetCurrentDirectory(), "MSSresource");
+        string outputFolder = Path.Combine(Directory.GetCurrentDirectory(), "MSSoutput");
+
+        CreateFolder(inputFolder);
+        CreateFolder(outputFolder);
+        OpenFolder(inputFolder);
+
+        // 获取支持的图像文件
+        string[] imageFiles = Directory.GetFiles(inputFolder, "*.*", SearchOption.TopDirectoryOnly);
+        Console.WriteLine("图片放好后，请输入相应数字继续");
+        Console.WriteLine("【1】清除所有图像元数据");
+        Console.WriteLine("【2】扫描并分类列出图像元数据");
+
+        string command = Console.ReadLine();
+
+        if (command == "1")
         {
-            string fileName = Path.GetFileName(filePath);    // 获取文件名
-            string outputPath = Path.Combine(outputDirectory, fileName);    // 生成输出路径
-
-            // 使用 Magick.NET 打开图像并去除元数据
-            using (MagickImage image = new MagickImage(filePath))
+            foreach (var filePath in imageFiles)
             {
-                // 移除所有元数据
-                image.Strip();
+                if (!IsImageFile(filePath)) continue;
 
-                // 保存处理后的图像到 output 文件夹 
-                image.Write(outputPath);
-            }
+                string fileName = Path.GetFileName(filePath);
+                string outputPath = Path.Combine(outputFolder, fileName);
 
-            Console.WriteLine($"已处理: {fileName}");
-
-            OpenFolder(outputDirectory);
-
-        }
-    }
-
-
-    Console.WriteLine("所有图像处理完成！");
-}
-else if (command == "2")
-{
-    // 预定义的元数据类别对照表
-    Dictionary<string, string[]> metadataCategories = new Dictionary<string, string[]>()
-    {
-        { "基本信息", new string[] { "Make", "Model", "Software", "DateTime" } },
-        { "位置信息", new string[] { "GPSLatitude", "GPSLongitude", "GPSAltitude" } },
-        { "相机信息", new string[] { "ExposureTime", "FNumber", "ISOSpeedRatings" } },
-        { "版权信息", new string[] { "Copyright" } },
-        { "文件信息", new string[] {"FileName", "FileSize", "FileType"} } //Added File Information
-    };
-
-    foreach (var filePath in imageFiles)
-    {
-        // 只处理图像文件
-        if (IsImageFile(filePath))
-        {
-            string fileName = Path.GetFileName(filePath);
-            Console.WriteLine($"\n正在处理文件: {fileName}");
-
-            using (var image = new MagickImage(filePath))
-            {
-                // 获取所有元数据
-                var allMetadata = GetAllMetadata(image);
-
-                // 添加文件名、大小和类型到元数据中
-                allMetadata.Add("FileName", fileName);
-                allMetadata.Add("FileSize", new FileInfo(filePath).Length.ToString());
-                allMetadata.Add("FileType", Path.GetExtension(filePath).ToUpper());
-
-                // 遍历元数据类别
-                foreach (var category in metadataCategories)
+                using (var image = new MagickImage(filePath))
                 {
-                    Console.WriteLine($"\n【{category.Key}】"); // 输出类别名称
-                    bool hasDataInCategory = false; // 标记是否有数据在该类别下
+                    image.Strip();
+                    image.Write(outputPath);
+                }
+                Console.WriteLine($"已处理: {fileName}");
+            }
+            Console.WriteLine("所有图像处理完成！");
+            OpenFolder(outputFolder);
+        }
+        else if (command == "2")
+        {
+            // 精细分类映射
+            var categories = new Dictionary<string, string[]>
+            {
+                { "基本相机信息", new string[] { "EXIF:Make", "EXIF:Model", "EXIF:39424", "EXIF:SensingMethod" } },
+                { "图像尺寸与分辨率", new string[] { "EXIF:ImageLength", "EXIF:ImageWidth", "EXIF:PixelYDimension", "EXIF:PixelXDimension", "EXIF:YResolution", "EXIF:XResolution", "EXIF:ResolutionUnit" } },
+                { "时间信息", new string[] { "EXIF:DateTime", "EXIF:DateTimeOriginal", "EXIF:DateTimeDigitized", "EXIF:SubsecTimeOriginal", "EXIF:SubsecTime", "EXIF:SubsecTimeDigitized", "EXIF:OffsetTime", "EXIF:OffsetTimeOriginal", "EXIF:GPSDateStamp" } },
+                { "曝光与镜头信息", new string[] { "EXIF:ApertureValue", "EXIF:ExposureBiasValue", "EXIF:ExposureProgram", "EXIF:ExposureMode", "EXIF:ExposureTime", "EXIF:Flash", "EXIF:FNumber", "EXIF:ShutterSpeedValue", "EXIF:MeteringMode", "EXIF:FocalLength", "EXIF:FocalLengthIn35mmFilm", "EXIF:ISOSpeed", "EXIF:ISOSpeedRatings", "EXIF:SensitivityType", "EXIF:BrightnessValue", "EXIF:WhiteBalance", "EXIF:LightSource" } },
+                { "场景与特效", new string[] { "EXIF:SceneType", "EXIF:SceneCaptureType", "EXIF:FlashpixVersion", "EXIF:ComponentsConfiguration" } },
+                { "GPS位置信息", new string[] { "EXIF:GPSLatitude", "EXIF:GPSLongitude", "EXIF:GPSAltitude", "EXIF:GPSLatitudeRef", "EXIF:GPSLongitudeRef", "EXIF:GPSSpeed", "EXIF:GPSSpeedRef", "EXIF:GPSAltitudeRef", "EXIF:GPSTimestamp", "EXIF:GPSDateStamp" } },
+                { "厂商及其他信息", new string[] { "EXIF:39321", "EXIF:34970", "EXIF:34974", "EXIF:42593", "EXIF:34973", "EXIF:40965", "EXIF:34975", "EXIF:34967", "EXIF:34965" } },
+                { "图像其它属性", new string[] { "EXIF:Orientation", "EXIF:YCbCrPositioning", "EXIF:ColorSpace" } },
+                { "文件信息", new string[] { "FileName", "FileSize", "FileType" } },
+            };
 
-                    // 遍历当前类别下的元数据名称
-                    foreach (var metadataName in category.Value)
+            foreach (var filePath in imageFiles)
+            {
+                if (!IsImageFile(filePath)) continue;
+
+                string fileName = Path.GetFileName(filePath);
+                Console.WriteLine($"\n正在处理文件: {fileName}");
+                using (var image = new MagickImage(filePath))
+                {
+                    // 提取所有元数据并附加文件信息
+                    var metadata = GetAllMetadata(image);
+                    metadata["FileName"] = fileName;
+                    metadata["FileSize"] = new FileInfo(filePath).Length.ToString();
+                    metadata["FileType"] = Path.GetExtension(filePath).ToUpper();
+
+                    // 用于记录未分类的元数据
+                    var remaining = new Dictionary<string, string>(metadata);
+
+                    foreach (var category in categories)
                     {
-                        // 检查元数据是否存在于提取的所有元数据中
-                        if (allMetadata.ContainsKey(metadataName))
+                        Console.WriteLine($"\n【{category.Key}】");
+                        bool found = false;
+                        foreach (var key in category.Value)
                         {
-                            Console.WriteLine($"  {metadataName}: {allMetadata[metadataName]}"); // 输出元数据
-                            hasDataInCategory = true; // 设置标记为true
+                            if (metadata.TryGetValue(key, out string value))
+                            {
+                                // 大数据项只显示长度
+                                if (key == "XMP" || key.StartsWith("Profile:") || key.Contains("MakerNote"))
+                                    Console.WriteLine($"  {key}: (Data, Length: {value.Length})");
+                                else
+                                    Console.WriteLine($"  {key}: {value}");
+                                found = true;
+                                remaining.Remove(key);
+                            }
+                        }
+                        if (!found)
+                        {
+                            Console.WriteLine("  无相关数据");
                         }
                     }
-                    if (!hasDataInCategory)
+
+                    Console.WriteLine("\n【未分类元数据】");
+                    if (remaining.Count > 0)
                     {
-                        Console.WriteLine("  无相关数据"); // 如果类别下没有数据，输出提示
+                        foreach (var kvp in remaining)
+                        {
+                            if (kvp.Key == "XMP" || kvp.Key.StartsWith("Profile:"))
+                                Console.WriteLine($"  {kvp.Key}: (Data, Length: {kvp.Value.Length})");
+                            else
+                                Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                        }
                     }
+                    else
+                    {
+                        Console.WriteLine("  无");
+                    }
+                    Console.WriteLine("--------------------");
                 }
-                Console.WriteLine("--------------------");
             }
         }
     }
-}
 
-// 判断文件是否为图像文件
-static bool IsImageFile(string filePath)
-{
-    string[] imageExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
-    string fileExtension = Path.GetExtension(filePath).ToLower();
-    foreach (var ext in imageExtensions)
+    static void CreateFolder(string path)
     {
-        if (fileExtension == ext)
+        if (!Directory.Exists(path))
         {
-            return true;
-        }
-    }
-    return false;
-}
-
-static void OpenFolder(string path)
-{
-    try
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            Process.Start("explorer", path);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            Process.Start("xdg-open", path);
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            Process.Start("open", path);
+            Directory.CreateDirectory(path);
+            Console.WriteLine($"文件夹已创建: {path}");
         }
         else
         {
-            Console.WriteLine("不支持的操作系统");
+            Console.WriteLine($"文件夹已存在: {path}");
         }
     }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"无法打开文件夹: {ex.Message}");
-    }
-}
-static Dictionary<string, string> GetAllMetadata(MagickImage image)
-{
-    var metadata = new Dictionary<string, string>();
 
-    // 获取 EXIF 元数据
-    var exifProfile = image.GetExifProfile();
-    if (exifProfile != null)
+    static bool IsImageFile(string filePath)
     {
-        foreach (var value in exifProfile.Values)
+        string[] extensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
+        string ext = Path.GetExtension(filePath).ToLower();
+        return Array.Exists(extensions, e => e == ext);
+    }
+
+    static void OpenFolder(string path)
+    {
+        try
         {
-            var exifValue = value.GetValue();
-            if (exifValue != null)
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                Process.Start("explorer", path);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                Process.Start("xdg-open", path);
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                Process.Start("open", path);
+            else
+                Console.WriteLine("不支持的操作系统");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"无法打开文件夹: {ex.Message}");
+        }
+    }
+
+    static Dictionary<string, string> GetAllMetadata(MagickImage image)
+    {
+        var metadata = new Dictionary<string, string>();
+
+        // EXIF 信息
+        var exif = image.GetExifProfile();
+        if (exif != null)
+        {
+            foreach (var value in exif.Values)
             {
-                metadata[$"EXIF:{value.Tag}"] = exifValue.ToString();
+                var exifVal = value.GetValue();
+                if (exifVal != null)
+                    metadata[$"EXIF:{value.Tag}"] = exifVal.ToString();
             }
         }
-    }
 
-    // 获取 XMP 元数据
-    var xmpProfile = image.GetXmpProfile();
-    if (xmpProfile != null)
-    {
-        // Read the entire XMP string.  You might need an XML parser for complex XMP data.
-        metadata["XMP"] = xmpProfile.ToString();
-    }
+        // XMP 信息
+        var xmp = image.GetXmpProfile();
+        if (xmp != null)
+            metadata["XMP"] = xmp.ToString();
 
-    // 获取 IPTC 元数据
-    var iptcProfile = image.GetIptcProfile();
-    if (iptcProfile != null)
-    {
-        foreach (var value in iptcProfile.Values)
+        // IPTC 信息
+        var iptc = image.GetIptcProfile();
+        if (iptc != null)
         {
-            var iptcValue = value.ToString();
-            if (iptcValue != null)
+            foreach (var value in iptc.Values)
             {
-                metadata[$"IPTC:{value.Tag}"] = iptcValue.ToString();
+                metadata[$"IPTC:{value.Tag}"] = value.ToString();
             }
         }
-    }
 
-    // 获取其他配置文件数据
-    foreach (var profileName in image.ProfileNames)
-    {
-        var profile = image.GetProfile(profileName);
-        if (profile != null && profileName != "exif" && profileName != "xmp" && profileName != "iptc") // Exclude already processed
+        // 其他配置文件（排除exif,xmp,iptc）
+        foreach (var name in image.ProfileNames)
         {
-            metadata[$"Profile:{profileName}"] = Convert.ToBase64String(profile.ToByteArray());
+            if (name.ToLower() is "exif" or "xmp" or "iptc") continue;
+            var profile = image.GetProfile(name);
+            if (profile != null)
+                metadata[$"Profile:{name}"] = Convert.ToBase64String(profile.ToByteArray());
         }
-    }
 
-    // 直接使用 GetAttribute 获取可能的额外键
-    string[] commonKeys = { "Make", "Model", "Software", "DateTime", "Copyright" };
-    foreach (var key in commonKeys)
-    {
-        string value = image.GetAttribute(key);
-        if (!string.IsNullOrEmpty(value))
+        // 常见属性（例如：Make、Model等）
+        string[] attrs = { "Make", "Model", "Software", "DateTime", "Copyright" };
+        foreach (var attr in attrs)
         {
-            metadata[$"Attribute:{key}"] = value;
+            string val = image.GetAttribute(attr);
+            if (!string.IsNullOrEmpty(val))
+                metadata[$"Attribute:{attr}"] = val;
         }
-    }
 
-    return metadata;
+        return metadata;
+    }
 }
-
