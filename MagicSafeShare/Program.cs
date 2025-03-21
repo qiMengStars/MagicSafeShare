@@ -4,6 +4,18 @@ using System.Runtime.InteropServices;
 
 class Program
 {
+    // 控制台文本颜色辅助方法
+    static void SetColor(ConsoleColor color)
+    {
+        Console.ForegroundColor = color;
+    }
+
+    // 重置控制台文本颜色
+    static void ResetColor()
+    {
+        Console.ResetColor();
+    }
+
     static void Main()
     {
         Console.WriteLine("请将需要处理的图片放入MSSresource文件夹");
@@ -25,6 +37,8 @@ class Program
 
         if (command == "1")
         {
+            Console.WriteLine("开始处理图片");
+
             foreach (var filePath in imageFiles)
             {
                 if (!IsImageFile(filePath)) continue;
@@ -44,18 +58,18 @@ class Program
         }
         else if (command == "2")
         {
-            // 精细分类映射
-            var categories = new Dictionary<string, string[]>
+            // 精细分类映射（包含中文注释）
+            var categories = new Dictionary<string, (string[], string[])>
             {
-                { "基本相机信息", new string[] { "EXIF:Make", "EXIF:Model", "EXIF:39424", "EXIF:SensingMethod" } },
-                { "图像尺寸与分辨率", new string[] { "EXIF:ImageLength", "EXIF:ImageWidth", "EXIF:PixelYDimension", "EXIF:PixelXDimension", "EXIF:YResolution", "EXIF:XResolution", "EXIF:ResolutionUnit" } },
-                { "时间信息", new string[] { "EXIF:DateTime", "EXIF:DateTimeOriginal", "EXIF:DateTimeDigitized", "EXIF:SubsecTimeOriginal", "EXIF:SubsecTime", "EXIF:SubsecTimeDigitized", "EXIF:OffsetTime", "EXIF:OffsetTimeOriginal", "EXIF:GPSDateStamp" } },
-                { "曝光与镜头信息", new string[] { "EXIF:ApertureValue", "EXIF:ExposureBiasValue", "EXIF:ExposureProgram", "EXIF:ExposureMode", "EXIF:ExposureTime", "EXIF:Flash", "EXIF:FNumber", "EXIF:ShutterSpeedValue", "EXIF:MeteringMode", "EXIF:FocalLength", "EXIF:FocalLengthIn35mmFilm", "EXIF:ISOSpeed", "EXIF:ISOSpeedRatings", "EXIF:SensitivityType", "EXIF:BrightnessValue", "EXIF:WhiteBalance", "EXIF:LightSource" } },
-                { "场景与特效", new string[] { "EXIF:SceneType", "EXIF:SceneCaptureType", "EXIF:FlashpixVersion", "EXIF:ComponentsConfiguration" } },
-                { "GPS位置信息", new string[] { "EXIF:GPSLatitude", "EXIF:GPSLongitude", "EXIF:GPSAltitude", "EXIF:GPSLatitudeRef", "EXIF:GPSLongitudeRef", "EXIF:GPSSpeed", "EXIF:GPSSpeedRef", "EXIF:GPSAltitudeRef", "EXIF:GPSTimestamp", "EXIF:GPSDateStamp" } },
-                { "厂商及其他信息", new string[] { "EXIF:39321", "EXIF:34970", "EXIF:34974", "EXIF:42593", "EXIF:34973", "EXIF:40965", "EXIF:34975", "EXIF:34967", "EXIF:34965" } },
-                { "图像其它属性", new string[] { "EXIF:Orientation", "EXIF:YCbCrPositioning", "EXIF:ColorSpace" } },
-                { "文件信息", new string[] { "FileName", "FileSize", "FileType" } },
+                { "基本相机信息", (new string[] { "Make", "Model", "Software", "SensingMethod" }, new string[] { "制造商", "型号", "软件", "感应方法" }) },
+                { "图像尺寸与分辨率", (new string[] { "ImageLength", "ImageWidth", "PixelYDimension", "PixelXDimension", "YResolution", "XResolution", "ResolutionUnit" }, new string[] { "图像长度", "图像宽度", "像素高度", "像素宽度", "垂直分辨率", "水平分辨率", "分辨率单位" }) },
+                { "时间信息", (new string[] { "DateTime", "DateTimeOriginal", "DateTimeDigitized", "SubsecTimeOriginal", "SubsecTime", "SubsecTimeDigitized", "OffsetTime", "OffsetTimeOriginal", "GPSDateStamp" }, new string[] { "日期时间", "原始日期时间", "数字化日期时间", "原始子秒时间", "子秒时间", "数字化子秒时间", "偏移时间", "原始偏移时间", "GPS日期戳" }) },
+                { "曝光与镜头信息", (new string[] { "ApertureValue", "ExposureBiasValue", "ExposureProgram", "ExposureMode", "ExposureTime", "Flash", "FNumber", "ShutterSpeedValue", "MeteringMode", "FocalLength", "FocalLengthIn35mmFilm", "ISOSpeed", "ISOSpeedRatings", "SensitivityType", "BrightnessValue", "WhiteBalance", "LightSource" }, new string[] { "光圈值", "曝光偏差值", "曝光程序", "曝光模式", "曝光时间", "闪光灯", "光圈", "快门速度值", "测光模式", "焦距", "35mm等效焦距", "ISO速度", "ISO速度等级", "感光度类型", "亮度值", "白平衡", "光源" }) },
+                { "场景与特效", (new string[] { "SceneType", "SceneCaptureType", "FlashpixVersion", "ComponentsConfiguration" }, new string[] { "场景类型", "场景捕捉类型", "Flashpix版本", "组件配置" }) },
+                { "GPS位置信息", (new string[] { "GPSLatitude", "GPSLongitude", "GPSAltitude", "GPSLatitudeRef", "GPSLongitudeRef", "GPSSpeed", "GPSSpeedRef", "GPSAltitudeRef", "GPSTimestamp" }, new string[] { "GPS纬度", "GPS经度", "GPS高度", "GPS纬度参考", "GPS经度参考", "GPS速度", "GPS速度参考", "GPS高度参考", "GPS时间戳" }) },
+                { "厂商及其他信息", (new string[] { "39321", "34970", "34974", "42593", "34973", "40965", "34975", "34967", "34965" }, new string[] { "厂商特定信息1", "厂商特定信息2", "厂商特定信息3", "厂商特定信息4", "厂商特定信息5", "厂商特定信息6", "厂商特定信息7", "厂商特定信息8", "厂商特定信息9" }) },
+                { "图像其他属性", (new string[] { "Orientation", "YCbCrPositioning", "ColorSpace" }, new string[] { "方向", "YCbCr定位", "色彩空间" }) },
+                { "文件信息", (new string[] { "FileName", "FileSize", "FileType" }, new string[] { "文件名", "文件大小", "文件类型" }) },
             };
 
             foreach (var filePath in imageFiles)
@@ -79,22 +93,28 @@ class Program
                     {
                         Console.WriteLine($"\n【{category.Key}】");
                         bool found = false;
-                        foreach (var key in category.Value)
+                        for (int i = 0; i < category.Value.Item1.Length; i++)
                         {
+                            string key = category.Value.Item1[i];
+                            string displayName = category.Value.Item2[i]; // 获取中文名称
                             if (metadata.TryGetValue(key, out string value))
                             {
+                                SetColor(ConsoleColor.Green); // 设置为绿色
                                 // 大数据项只显示长度
                                 if (key == "XMP" || key.StartsWith("Profile:") || key.Contains("MakerNote"))
-                                    Console.WriteLine($"  {key}: (Data, Length: {value.Length})");
+                                    Console.WriteLine($"  {displayName}: (数据, 长度: {value.Length})");
                                 else
-                                    Console.WriteLine($"  {key}: {value}");
+                                    Console.WriteLine($"  {displayName}: {value}");
+                                ResetColor();
                                 found = true;
                                 remaining.Remove(key);
                             }
                         }
                         if (!found)
                         {
+                            SetColor(ConsoleColor.DarkGray); // 设置为深灰色
                             Console.WriteLine("  无相关数据");
+                            ResetColor();
                         }
                     }
 
@@ -103,15 +123,19 @@ class Program
                     {
                         foreach (var kvp in remaining)
                         {
+                            SetColor(ConsoleColor.Red); // 设置为红色
                             if (kvp.Key == "XMP" || kvp.Key.StartsWith("Profile:"))
-                                Console.WriteLine($"  {kvp.Key}: (Data, Length: {kvp.Value.Length})");
+                                Console.WriteLine($"  {kvp.Key}: (数据, 长度: {kvp.Value.Length})");
                             else
                                 Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                            ResetColor();
                         }
                     }
                     else
                     {
+                        SetColor(ConsoleColor.DarkGray); // 设置为深灰色
                         Console.WriteLine("  无");
+                        ResetColor();
                     }
                     Console.WriteLine("--------------------");
                 }
@@ -210,3 +234,4 @@ class Program
         return metadata;
     }
 }
+
