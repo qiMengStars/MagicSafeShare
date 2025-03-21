@@ -69,7 +69,7 @@ class Program
                 { "GPS位置信息", (new string[] { "GPSLatitude", "GPSLongitude", "GPSAltitude", "GPSLatitudeRef", "GPSLongitudeRef", "GPSSpeed", "GPSSpeedRef", "GPSAltitudeRef", "GPSTimestamp" }, new string[] { "GPS纬度", "GPS经度", "GPS高度", "GPS纬度参考", "GPS经度参考", "GPS速度", "GPS速度参考", "GPS高度参考", "GPS时间戳" }, ConsoleColor.DarkMagenta) },
                 { "厂商及其他信息", (new string[] { "39321", "34970", "34974", "42593", "34973", "40965", "34975", "34967", "34965" }, new string[] { "厂商特定信息1", "厂商特定信息2", "厂商特定信息3", "厂商特定信息4", "厂商特定信息5", "厂商特定信息6", "厂商特定信息7", "厂商特定信息8", "厂商特定信息9" }, ConsoleColor.DarkYellow) },
                 { "图像其他属性", (new string[] { "Orientation", "YCbCrPositioning", "ColorSpace" }, new string[] { "方向", "YCbCr定位", "色彩空间" }, ConsoleColor.DarkGreen) },
-                 { "文件信息", (new string[] { "FileName", "FileSize", "FileType" }, new string[] { "文件名", "文件大小", "文件类型" }, ConsoleColor.Blue) },
+                { "文件信息", (new string[] { "FileName", "FileSize", "FileType" }, new string[] { "文件名", "文件大小", "文件类型" }, ConsoleColor.Blue) },
             };
 
             foreach (var filePath in imageFiles)
@@ -91,26 +91,42 @@ class Program
 
                     foreach (var category in categories)
                     {
-                        Console.WriteLine($"\n【{category.Key}】");
-                        bool found = false;
                         SetColor(category.Value.Item3); // 设置分类颜色
+                        Console.WriteLine($"\n【{category.Key}】");
+                        ResetColor(); // 恢复默认颜色，以便元数据值以默认颜色显示
+
+                        bool found = false;
                         for (int i = 0; i < category.Value.Item1.Length; i++)
                         {
                             string key = category.Value.Item1[i];
-                            string displayName = category.Value.Item2[i]; // 获取中文名称
-                            // 优先匹配完整键名（例如 "EXIF:Make"），然后匹配不带前缀的键名（例如 "Make"）
+                            string displayName = category.Value.Item2[i];
                             if (metadata.TryGetValue("EXIF:" + key, out string value) || metadata.TryGetValue(key, out value))
                             {
-                                if (key == "XMP" || key.StartsWith("Profile:") || key.Contains("MakerNote"))
-                                    Console.WriteLine($"  {key} ({displayName}): (数据, 长度: {value.Length})");
-                                else
-                                    Console.WriteLine($"  {key} ({displayName}): {value}");
+                                Console.Write($"  ");
+                                SetColor(ConsoleColor.White); // 元数据名称
+                                Console.Write($"{key} ({displayName}): ");
+                                ResetColor(); // 恢复默认
+                                object displayValue = value;
+
+                                // 尝试转换为数值
+                                if (long.TryParse(value, out long longValue))
+                                {
+                                    displayValue = longValue;
+                                }
+                                else if (double.TryParse(value, out double doubleValue))
+                                {
+                                    displayValue = doubleValue;
+                                }
+                                else if (key == "XMP" || key.StartsWith("Profile:") || key.Contains("MakerNote"))
+                                {
+                                    displayValue = $"(数据, 长度: {value.Length})";
+                                }
+                                Console.WriteLine(displayValue);
                                 found = true;
-                                remaining.Remove("EXIF:" + key); // 移除已匹配的键
-                                remaining.Remove(key);     // 移除不带前缀的键
+                                remaining.Remove("EXIF:" + key);
+                                remaining.Remove(key);
                             }
                         }
-                        ResetColor();
                         if (!found)
                         {
                             SetColor(ConsoleColor.DarkGray);
@@ -125,10 +141,14 @@ class Program
                         SetColor(ConsoleColor.Red);
                         foreach (var kvp in remaining)
                         {
+                            Console.Write($"  ");
+                            SetColor(ConsoleColor.White);
+                            Console.Write($"{kvp.Key}: ");
+                            ResetColor();
+                            object displayValue = kvp.Value;
                             if (kvp.Key == "XMP" || kvp.Key.StartsWith("Profile:"))
-                                Console.WriteLine($"  {kvp.Key}: (数据, 长度: {kvp.Value.Length})");
-                            else
-                                Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                                displayValue = $"(数据, 长度: {kvp.Value.Length})";
+                            Console.WriteLine(displayValue);
                         }
                         ResetColor();
                     }
@@ -193,9 +213,9 @@ class Program
         {
             foreach (var value in exif.Values)
             {
-                var exifVal = value.GetValue();
-                if (exifVal != null)
-                    metadata[$"EXIF:{value.Tag}"] = exifVal.ToString();
+                object exifVal = value.GetValue();
+                string valString = exifVal?.ToString() ?? string.Empty;
+                metadata[$"EXIF:{value.Tag}"] = valString;
             }
         }
 
