@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Xml.Linq;
+﻿using System.Xml.Linq;
 using ImageMagick;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -10,23 +6,25 @@ using System.Runtime.InteropServices;
 namespace MagicSafeShare
 {
     /// <summary>
-    /// 程序入口类，处理图片元数据管理核心功能
+    /// 程序入口：图片元数据管理工具
+    /// 提供两种模式：
+    /// 1. 清除图片元数据
+    /// 2. 扫描并分类显示元数据
     /// </summary>
     class Program
     {
         static void Main()
         {
-            // 初始化文件夹路径
+            // 初始化工作目录
             string inputFolder = Path.Combine(Directory.GetCurrentDirectory(), "MSSresource");
             string outputFolder = Path.Combine(Directory.GetCurrentDirectory(), "MSSoutput");
 
-            // 创建必要文件夹并打开资源目录
+            // 创建并打开资源目录
             FolderManager.CreateFolder(inputFolder);
             FolderManager.CreateFolder(outputFolder);
             FolderManager.OpenFolder(inputFolder);
 
-            Console.WriteLine("请将需要处理的图片放入MSSresource文件夹");
-            Console.WriteLine("图片放好后，请输入相应数字继续");
+            Console.WriteLine("请将图片放入MSSresource文件夹后选择操作：");
             Console.WriteLine("【1】清除所有图像元数据");
             Console.WriteLine("【2】扫描并分类列出图像元数据");
 
@@ -43,38 +41,29 @@ namespace MagicSafeShare
                     MetadataScanner.ScanAndDisplayMetadata(imageFiles);
                     break;
                 default:
-                    Console.WriteLine("无效命令输入，请输入1或2");
+                    Console.WriteLine("请输入有效命令：1 或 2");
                     break;
             }
         }
     }
 
-    /// <summary>
-    /// 文件夹管理工具类，处理跨平台文件夹操作
+    // /// 跨平台文件夹管理工具
     /// </summary>
     public static class FolderManager
     {
-        /// <summary>
-        /// 创建指定路径的文件夹（如果不存在）
+        // /// 创建文件夹（如果不存在）
         /// </summary>
-        /// <param name="path">要创建的文件夹路径</param>
         public static void CreateFolder(string path)
         {
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
-                Console.WriteLine($"文件夹已创建: {path}");
-            }
-            else
-            {
-                Console.WriteLine($"文件夹已存在: {path}");
+                Console.WriteLine($"创建文件夹: {path}");
             }
         }
 
-        /// <summary>
-        /// 使用系统默认应用打开指定文件夹
+        // /// 用系统默认应用打开文件夹
         /// </summary>
-        /// <param name="path">要打开的文件夹路径</param>
         public static void OpenFolder(string path)
         {
             try
@@ -86,52 +75,32 @@ namespace MagicSafeShare
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     Process.Start("open", path);
                 else
-                    Console.WriteLine("不支持的操作系统");
+                    Console.WriteLine("不支持的系统平台");
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"无法打开文件夹: {ex.Message}");
+                Console.WriteLine($"打开失败: {ex.Message}");
             }
         }
     }
 
-    /// <summary>
-    /// 控制台输出辅助类，处理带颜色的文本输出
+    // /// 控制台颜色工具类
     /// </summary>
     public static class ConsoleHelper
     {
-        /// <summary>
-        /// 设置控制台前景色
-        /// </summary>
-        /// <param name="color">要设置的颜色</param>
-        public static void SetColor(ConsoleColor color)
-        {
-            Console.ForegroundColor = color;
-        }
-
-        /// <summary>
-        /// 重置控制台颜色为默认值
-        /// </summary>
-        public static void ResetColor()
-        {
-            Console.ResetColor();
-        }
+        public static void SetColor(ConsoleColor color) => Console.ForegroundColor = color;
+        public static void ResetColor() => Console.ResetColor();
     }
 
-    /// <summary>
-    /// 图像处理工具类，包含元数据处理相关方法
+    // /// 图像处理核心工具
     /// </summary>
     public static class ImageProcessor
     {
-        /// <summary>
-        /// 清除指定图像文件的元数据
+        // /// 清除图片元数据并保存到输出目录
         /// </summary>
-        /// <param name="imageFiles">要处理的图像文件路径数组</param>
-        /// <param name="inputFolder">输入文件夹路径</param>
-        /// <param name="outputFolder">输出文件夹路径</param>
         public static void StripMetadata(string[] imageFiles, string inputFolder, string outputFolder)
         {
-            Console.WriteLine("开始处理图片");
+            Console.WriteLine("开始处理图片...");
 
             foreach (var filePath in imageFiles)
             {
@@ -142,36 +111,29 @@ namespace MagicSafeShare
 
                 using (var image = new MagickImage(filePath))
                 {
-                    image.Strip();
+                    image.Strip();  // 清除元数据
                     image.Write(outputPath);
                 }
                 Console.WriteLine($"已处理: {fileName}");
             }
-            Console.WriteLine("所有图像处理完成！");
+            Console.WriteLine("处理完成！");
         }
 
-        /// <summary>
-        /// 判断文件是否为支持的图像格式
+        // /// 检查是否为支持的图片格式
         /// </summary>
-        /// <param name="filePath">文件路径</param>
-        /// <returns>是否为图像文件</returns>
         public static bool IsImageFile(string filePath)
         {
-            string[] extensions = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
-            string ext = Path.GetExtension(filePath).ToLower();
-            return Array.Exists(extensions, e => e == ext);
+            string[] supportedExts = { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".webp" };
+            return supportedExts.Contains(Path.GetExtension(filePath).ToLower());
         }
     }
 
-    /// <summary>
-    /// 元数据处理类，负责元数据扫描和分类显示
+    // /// 元数据扫描与显示模块
     /// </summary>
     public static class MetadataScanner
     {
-        /// <summary>
-        /// 扫描并显示所有图像文件的元数据
+        // /// 扫描并显示图片元数据
         /// </summary>
-        /// <param name="imageFiles">要处理的图像文件路径数组</param>
         public static void ScanAndDisplayMetadata(string[] imageFiles)
         {
             string xmlPath = Path.Combine(Directory.GetCurrentDirectory(), "MetadataCategories.xml");
@@ -182,7 +144,7 @@ namespace MagicSafeShare
                 if (!ImageProcessor.IsImageFile(filePath)) continue;
 
                 string fileName = Path.GetFileName(filePath);
-                Console.WriteLine($"\n正在处理文件: {fileName}");
+                Console.WriteLine($"\n处理文件: {fileName}");
 
                 using (var image = new MagickImage(filePath))
                 {
@@ -196,12 +158,8 @@ namespace MagicSafeShare
             }
         }
 
-        /// <summary>
-        /// 显示分类后的元数据
+        // /// 按分类显示元数据
         /// </summary>
-        /// <param name="categories">元数据分类配置</param>
-        /// <param name="metadata">提取的元数据字典</param>
-        /// <param name="fileName">文件名</param>
         private static void DisplayMetadata(Dictionary<string, MetadataCategory> categories, Dictionary<string, string> metadata, string fileName)
         {
             var remaining = new Dictionary<string, string>(metadata);
@@ -212,29 +170,30 @@ namespace MagicSafeShare
                 Console.WriteLine($"\n【{category.Key}】");
                 ConsoleHelper.ResetColor();
 
-                bool found = false;
+                bool hasData = false;
                 foreach (var keyPair in category.Value.Keys)
                 {
                     string key = keyPair.Key;
                     string displayName = keyPair.DisplayName;
-                    if (metadata.TryGetValue("EXIF:" + key, out string value) || metadata.TryGetValue(key, out value))
+                    
+                    if (metadata.TryGetValue($"EXIF:{key}", out string value) || metadata.TryGetValue(key, out value))
                     {
-                        Console.Write($"  ");
+                        Console.Write("  ");
                         ConsoleHelper.SetColor(ConsoleColor.White);
                         Console.Write($"{key} ({displayName}): ");
                         ConsoleHelper.ResetColor();
-
-                        object displayValue = FormatMetadataValue(key, value);
-                        Console.WriteLine(displayValue);
-                        found = true;
-                        remaining.Remove("EXIF:" + key);
+                        Console.WriteLine(FormatMetadataValue(key, value));
+                        
+                        remaining.Remove($"EXIF:{key}");
                         remaining.Remove(key);
+                        hasData = true;
                     }
                 }
-                if (!found)
+
+                if (!hasData)
                 {
                     ConsoleHelper.SetColor(ConsoleColor.DarkGray);
-                    Console.WriteLine("  无相关数据");
+                    Console.WriteLine("  无数据");
                     ConsoleHelper.ResetColor();
                 }
             }
@@ -245,7 +204,7 @@ namespace MagicSafeShare
                 ConsoleHelper.SetColor(ConsoleColor.Red);
                 foreach (var kvp in remaining)
                 {
-                    Console.Write($"  ");
+                    Console.Write("  ");
                     ConsoleHelper.SetColor(ConsoleColor.White);
                     Console.Write($"{kvp.Key}: ");
                     ConsoleHelper.ResetColor();
@@ -262,34 +221,28 @@ namespace MagicSafeShare
             Console.WriteLine("--------------------");
         }
 
-        /// <summary>
-        /// 格式化元数据值显示方式
+        // /// 格式化元数据值显示
         /// </summary>
-        /// <param name="key">元数据键名</param>
-        /// <param name="value">原始值</param>
-        /// <returns>格式化后的显示值</returns>
         private static object FormatMetadataValue(string key, string value)
         {
-            if (long.TryParse(value, out long longValue))
-                return longValue;
-            if (double.TryParse(value, out double doubleValue))
-                return doubleValue;
+            if (long.TryParse(value, out long longVal))
+                return longVal;
+            if (double.TryParse(value, out double doubleVal))
+                return doubleVal;
+                
             if (key == "XMP" || key.StartsWith("Profile:") || key.Contains("MakerNote"))
                 return $"(数据, 长度: {value.Length})";
+                
             return value;
         }
     }
 
-    /// <summary>
-    /// 元数据帮助类，处理元数据加载和提取
+    // /// 元数据配置与提取工具
     /// </summary>
     public static class MetadataHelper
     {
-        /// <summary>
-        /// 加载元数据分类配置文件
+        // /// 从XML加载元数据分类配置
         /// </summary>
-        /// <param name="xmlFilePath">XML配置文件路径</param>
-        /// <returns>元数据分类字典</returns>
         public static Dictionary<string, MetadataCategory> LoadMetadataCategories(string xmlFilePath)
         {
             var categories = new Dictionary<string, MetadataCategory>();
@@ -297,11 +250,9 @@ namespace MagicSafeShare
             if (!File.Exists(xmlFilePath))
             {
                 Console.WriteLine("找不到分类配置文件！");
-                Console.WriteLine("此目录下所有文件：");
+                Console.WriteLine("当前目录文件列表：");
                 foreach (var file in Directory.GetFiles(Directory.GetCurrentDirectory()))
-                {
                     Console.WriteLine(file);
-                }
                 return categories;
             }
 
@@ -313,16 +264,12 @@ namespace MagicSafeShare
                     string name = categoryElement.Attribute("Name")?.Value;
                     if (Enum.TryParse<ConsoleColor>(categoryElement.Attribute("Color")?.Value, out var color))
                     {
-                        var keys = new List<(string Key, string DisplayName)>();
-                        foreach (var keyElement in categoryElement.Elements("Key"))
-                        {
-                            string keyValue = keyElement.Attribute("Value")?.Value;
-                            string displayName = keyElement.Attribute("DisplayName")?.Value;
-                            if (!string.IsNullOrEmpty(keyValue) && !string.IsNullOrEmpty(displayName))
-                            {
-                                keys.Add((keyValue, displayName));
-                            }
-                        }
+                        var keys = categoryElement.Elements("Key")
+                            .Where(e => !string.IsNullOrEmpty(e.Attribute("Value")?.Value) && 
+                                       !string.IsNullOrEmpty(e.Attribute("DisplayName")?.Value))
+                            .Select(e => (e.Attribute("Value").Value, e.Attribute("DisplayName").Value))
+                            .ToList();
+
                         categories[name] = new MetadataCategory
                         {
                             Name = name,
@@ -334,88 +281,84 @@ namespace MagicSafeShare
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"加载分类配置失败: {ex.Message}");
+                Console.WriteLine($"配置加载失败: {ex.Message}");
             }
 
             return categories;
         }
 
-        /// <summary>
-        /// 提取指定图像的所有元数据
-        /// </summary>
-        /// <param name="image">MagickImage对象</param>
-        /// <returns>包含所有元数据的字典</returns>
         public static Dictionary<string, string> GetAllMetadata(MagickImage image)
         {
             var metadata = new Dictionary<string, string>();
+    
+            // 处理EXIF数据
+            SafeAddMetadata(metadata, "EXIF", image.GetExifProfile(), 
+                exif => exif.Values.Select(v => new KeyValuePair<string, string>(
+                    $"EXIF:{v.Tag}", v.GetValue()?.ToString() ?? string.Empty)));
 
-            // 提取EXIF信息
-            var exif = image.GetExifProfile();
-            if (exif != null)
+            // 处理XMP数据
+            SafeAddMetadata(metadata, "XMP", image.GetXmpProfile(),
+                xmp => new[] { new KeyValuePair<string, string>("XMP", xmp.ToString()) });
+
+            // 处理IPTC数据
+            SafeAddMetadata(metadata, "IPTC", image.GetIptcProfile(),
+                iptc => iptc.Values.Select(v => new KeyValuePair<string, string>(
+                    $"IPTC:{v.Tag}", v.ToString())));
+
+            // 处理其他配置文件（非EXIF/XMP/IPTC）
+            foreach (var name in image.ProfileNames
+                .Where(n => !new[] { "exif", "xmp", "iptc" }.Contains(n.ToLower())))
             {
-                foreach (var value in exif.Values)
+                if (image.GetProfile(name) is Profile profile)
                 {
-                    object exifVal = value.GetValue();
-                    string valString = exifVal?.ToString() ?? string.Empty;
-                    metadata[$"EXIF:{value.Tag}"] = valString;
+                    SafeAddMetadata(metadata, $"Profile:{name}", profile,
+                        p => new[] { new KeyValuePair<string, string>(
+                            $"Profile:{name}", Convert.ToBase64String(p.ToByteArray())) });
                 }
             }
 
-            // 提取XMP信息
-            var xmp = image.GetXmpProfile();
-            if (xmp != null)
-                metadata["XMP"] = xmp.ToString();
-
-            // 提取IPTC信息
-            var iptc = image.GetIptcProfile();
-            if (iptc != null)
+            // 处理常见属性
+            var attributes = new[] { "Make", "Model", "Software", "DateTime", "Copyright" };
+            foreach (var attr in attributes)
             {
-                foreach (var value in iptc.Values)
+                string value = image.GetAttribute(attr);
+                if (!string.IsNullOrEmpty(value))
                 {
-                    metadata[$"IPTC:{value.Tag}"] = value.ToString();
+                    metadata[$"Attribute:{attr}"] = value;
                 }
-            }
-
-            // 提取其他配置文件信息
-            foreach (var name in image.ProfileNames)
-            {
-                if (name.ToLower() is "exif" or "xmp" or "iptc") continue;
-                var profile = image.GetProfile(name);
-                if (profile != null)
-                    metadata[$"Profile:{name}"] = Convert.ToBase64String(profile.ToByteArray());
-            }
-
-            // 提取常见属性
-            string[] attrs = { "Make", "Model", "Software", "DateTime", "Copyright" };
-            foreach (var attr in attrs)
-            {
-                string val = image.GetAttribute(attr);
-                if (!string.IsNullOrEmpty(val))
-                    metadata[$"Attribute:{attr}"] = val;
             }
 
             return metadata;
         }
+
+// 通用安全处理方法
+private static void SafeAddMetadata<T>(Dictionary<string, string> metadata, 
+    string categoryKey, T profile, Func<T, IEnumerable<KeyValuePair<string, string>>> extractor)
+    where T : class
+{
+    try
+    {
+        if (profile != null)
+        {
+            foreach (var kvp in extractor(profile))
+            {
+                metadata[kvp.Key] = kvp.Value;
+            }
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"{categoryKey} metadata extraction failed: {ex.Message}");
+    }
+}
     }
 
-    /// <summary>
-    /// 元数据分类配置类
+    // /// 元数据分类配置模型
     /// </summary>
     public class MetadataCategory
     {
-        /// <summary>
-        /// 分类名称
-        /// </summary>
         public string Name { get; set; }
-
-        /// <summary>
-        /// 分类显示颜色
-        /// </summary>
         public ConsoleColor Color { get; set; }
-
-        /// <summary>
-        /// 分类包含的元数据键值对
-        /// </summary>
         public (string Key, string DisplayName)[] Keys { get; set; }
     }
 }
