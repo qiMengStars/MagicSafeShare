@@ -306,15 +306,12 @@ namespace MagicSafeShare
                     $"IPTC:{v.Tag}", v.ToString())));
 
             // 处理其他配置文件（非EXIF/XMP/IPTC）
-            foreach (var name in image.ProfileNames
-                .Where(n => !new[] { "exif", "xmp", "iptc" }.Contains(n.ToLower())))
+            foreach (var name in image.ProfileNames)
             {
-                if (image.GetProfile(name) is Profile profile)
-                {
-                    SafeAddMetadata(metadata, $"Profile:{name}", profile,
-                        p => new[] { new KeyValuePair<string, string>(
-                            $"Profile:{name}", Convert.ToBase64String(p.ToByteArray())) });
-                }
+                if (name.ToLower() is "exif" or "xmp" or "iptc") continue;
+                var profile = image.GetProfile(name);
+                if (profile != null)
+                    metadata[$"Profile:{name}"] = Convert.ToBase64String(profile.ToByteArray());
             }
 
             // 处理常见属性
