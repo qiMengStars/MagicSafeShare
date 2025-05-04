@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<MetadataCategories>
+  <Category Name="基本相机信息" Color="Cyan">
+    <Key Value="Make" DisplayName="制造商"/>
+    <Key Value="Model" DisplayName="型号"/>
+    <Key Value="Software" DisplayName="软件"/>
+    <Key Value="SensingMethod" DisplayName="感应方法"/>
+  </Category>
+  <Category Name="图像尺寸与分辨率" Color="Magenta">
+    <Key Value="ImageLength" DisplayName="图像长度"/>
+    <Key Value="ImageWidth" DisplayName="图像宽度"/>
+    <Key Value="PixelYDimension" DisplayName="像素高度"/>
+    <Key Value="PixelXDimension" DisplayName="像素宽度"/>
+    <Key Value="YResolution" DisplayName="垂直分辨率"/>
+    <Key Value="XResolution" DisplayName="水平分辨率"/>
+    <Key Value="ResolutionUnit" DisplayName="分辨率单位"/>
+  </Category>
+  <Category Name="时间信息" Color="Yellow">
+    <Key Value="DateTime" DisplayName="日期时间"/>
+    <Key Value="DateTimeOriginal" DisplayName="原始日期时间"/>
+    <Key Value="DateTimeDigitized" DisplayName="数字化日期时间"/>
+    <Key Value="SubsecTimeOriginal" DisplayName="原始子秒时间"/>
+    <Key Value="SubsecTime" DisplayName="子秒时间"/>
+    <Key Value="SubsecTimeDigitized" DisplayName="数字化子秒时间"/>
+    <Key Value="OffsetTime" DisplayName="偏移时间"/>
+    <Key Value="OffsetTimeOriginal" DisplayName="原始偏移时间"/>
+    <Key Value="GPSDateStamp" DisplayName="GPS日期戳"/>
+  </Category>
+  <Category Name="曝光与镜头信息" Color="Green">
+    <Key Value="ApertureValue" DisplayName="光圈值"/>
+    <Key Value="ExposureBiasValue" DisplayName="曝光偏差值"/>
+    <Key Value="ExposureProgram" DisplayName="曝光程序"/>
+    <Key Value="ExposureMode" DisplayName="曝光模式"/>
+    <Key Value="ExposureTime" DisplayName="曝光时间"/>
+    <Key Value="Flash" DisplayName="闪光灯"/>
+    <Key Value="FNumber" DisplayName="光圈"/>
+    <Key Value="ShutterSpeedValue" DisplayName="快门速度值"/>
+    <Key Value="MeteringMode" DisplayName="测光模式"/>
+    <Key Value="FocalLength" DisplayName="焦距"/>
+    <Key Value="FocalLengthIn35mmFilm" DisplayName="35mm等效焦距"/>
+    <Key Value="ISOSpeed" DisplayName="ISO速度"/>
+    <Key Value="ISOSpeedRatings" DisplayName="ISO速度等级"/>
+    <Key Value="SensitivityType" DisplayName="感光度类型"/>
+    <Key Value="BrightnessValue" DisplayName="亮度值"/>
+    <Key Value="WhiteBalance" DisplayName="白平衡"/>
+    <Key Value="LightSource" DisplayName="光源"/>
+  </Category>
+  <Category Name="场景与特效" Color="DarkCyan">
+    <Key Value="SceneType" DisplayName="场景类型"/>
+    <Key Value="SceneCaptureType" DisplayName="场景捕捉类型"/>
+    <Key Value="FlashpixVersion" DisplayName="Flashpix版本"/>
+    <Key Value="ComponentsConfiguration" DisplayName="组件配置"/>
+  </Category>
+  <Category Name="GPS位置信息" Color="DarkMagenta">
+    <Key Value="GPSLatitude" DisplayName="GPS纬度"/>
+    <Key Value="GPSLongitude" DisplayName="GPS经度"/>
+    <Key Value="GPSAltitude" DisplayName="GPS高度"/>
+    <Key Value="GPSLatitudeRef" DisplayName="GPS纬度参考"/>
+    <Key Value="GPSLongitudeRef" DisplayName="GPS经度参考"/>
+    <Key Value="GPSSpeed" DisplayName="GPS速度"/>
+    <Key Value="GPSSpeedRef" DisplayName="GPS速度参考"/>
+    <Key Value="GPSAltitudeRef" DisplayName="GPS高度参考"/>
+    <Key Value="GPSTimestamp" DisplayName="GPS时间戳"/>
+  </Category>
+  <Category Name="厂商及其他信息" Color="DarkYellow">
+    <Key Value="39321" DisplayName="厂商特定信息1"/>
+    <Key Value="34970" DisplayName="厂商特定信息2"/>
+    <Key Value="34974" DisplayName="厂商特定信息3"/>
+    <Key Value="42593" DisplayName="厂商特定信息4"/>
+    <Key Value="34973" DisplayName="厂商特定信息5"/>
+    <Key Value="40965" DisplayName="厂商特定信息6"/>
+    <Key Value="34975" DisplayName="厂商特定信息7"/>
+    <Key Value="34967" DisplayName="厂商特定信息8"/>
+    <Key Value="34965" DisplayName="厂商特定信息9"/>
+  </Category>
+  <Category Name="图像其他属性" Color="DarkGreen">
+    <Key Value="Orientation" DisplayName="方向"/>
+    <Key Value="YCbCrPositioning" DisplayName="YCbCr定位"/>
+    <Key Value="ColorSpace" DisplayName="色彩空间"/>
+  </Category>
+  <Category Name="文件信息" Color="Blue">
+    <Key Value="FileName" DisplayName="文件名"/>
+    <Key Value="FileSize" DisplayName="文件大小"/>
+    <Key Value="FileType" DisplayName="文件类型"/>
+  </Category>
+</MetadataCategories>

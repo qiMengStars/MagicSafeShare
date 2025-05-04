@@ -1,4 +1,9 @@
-﻿using ImageMagick;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using ImageMagick;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
@@ -58,19 +63,7 @@ class Program
         }
         else if (command == "2")
         {
-            // 精细分类映射（包含中文注释和颜色）
-            var categories = new Dictionary<string, (string[], string[], ConsoleColor)>
-            {
-                { "基本相机信息", (new string[] { "Make", "Model", "Software", "SensingMethod" }, new string[] { "制造商", "型号", "软件", "感应方法" }, ConsoleColor.Cyan) },
-                { "图像尺寸与分辨率", (new string[] { "ImageLength", "ImageWidth", "PixelYDimension", "PixelXDimension", "YResolution", "XResolution", "ResolutionUnit" }, new string[] { "图像长度", "图像宽度", "像素高度", "像素宽度", "垂直分辨率", "水平分辨率", "分辨率单位" }, ConsoleColor.Magenta) },
-                { "时间信息", (new string[] { "DateTime", "DateTimeOriginal", "DateTimeDigitized", "SubsecTimeOriginal", "SubsecTime", "SubsecTimeDigitized", "OffsetTime", "OffsetTimeOriginal", "GPSDateStamp" }, new string[] { "日期时间", "原始日期时间", "数字化日期时间", "原始子秒时间", "子秒时间", "数字化子秒时间", "偏移时间", "原始偏移时间", "GPS日期戳" }, ConsoleColor.Yellow) },
-                { "曝光与镜头信息", (new string[] { "ApertureValue", "ExposureBiasValue", "ExposureProgram", "ExposureMode", "ExposureTime", "Flash", "FNumber", "ShutterSpeedValue", "MeteringMode", "FocalLength", "FocalLengthIn35mmFilm", "ISOSpeed", "ISOSpeedRatings", "SensitivityType", "BrightnessValue", "WhiteBalance", "LightSource" }, new string[] { "光圈值", "曝光偏差值", "曝光程序", "曝光模式", "曝光时间", "闪光灯", "光圈", "快门速度值", "测光模式", "焦距", "35mm等效焦距", "ISO速度", "ISO速度等级", "感光度类型", "亮度值", "白平衡", "光源" }, ConsoleColor.Green) },
-                { "场景与特效", (new string[] { "SceneType", "SceneCaptureType", "FlashpixVersion", "ComponentsConfiguration" }, new string[] { "场景类型", "场景捕捉类型", "Flashpix版本", "组件配置" }, ConsoleColor.DarkCyan) },
-                { "GPS位置信息", (new string[] { "GPSLatitude", "GPSLongitude", "GPSAltitude", "GPSLatitudeRef", "GPSLongitudeRef", "GPSSpeed", "GPSSpeedRef", "GPSAltitudeRef", "GPSTimestamp" }, new string[] { "GPS纬度", "GPS经度", "GPS高度", "GPS纬度参考", "GPS经度参考", "GPS速度", "GPS速度参考", "GPS高度参考", "GPS时间戳" }, ConsoleColor.DarkMagenta) },
-                { "厂商及其他信息", (new string[] { "39321", "34970", "34974", "42593", "34973", "40965", "34975", "34967", "34965" }, new string[] { "厂商特定信息1", "厂商特定信息2", "厂商特定信息3", "厂商特定信息4", "厂商特定信息5", "厂商特定信息6", "厂商特定信息7", "厂商特定信息8", "厂商特定信息9" }, ConsoleColor.DarkYellow) },
-                { "图像其他属性", (new string[] { "Orientation", "YCbCrPositioning", "ColorSpace" }, new string[] { "方向", "YCbCr定位", "色彩空间" }, ConsoleColor.DarkGreen) },
-                { "文件信息", (new string[] { "FileName", "FileSize", "FileType" }, new string[] { "文件名", "文件大小", "文件类型" }, ConsoleColor.Blue) },
-            };
+            var categories = LoadMetadataCategories("MetadataCategories.xml");
 
             foreach (var filePath in imageFiles)
             {
@@ -91,15 +84,15 @@ class Program
 
                     foreach (var category in categories)
                     {
-                        SetColor(category.Value.Item3); // 设置分类颜色
+                        SetColor(category.Value.Color); // 设置分类颜色
                         Console.WriteLine($"\n【{category.Key}】");
                         ResetColor(); // 恢复默认颜色，以便元数据值以默认颜色显示
 
                         bool found = false;
-                        for (int i = 0; i < category.Value.Item1.Length; i++)
+                        foreach (var keyPair in category.Value.Keys)
                         {
-                            string key = category.Value.Item1[i];
-                            string displayName = category.Value.Item2[i];
+                            string key = keyPair.Key;
+                            string displayName = keyPair.DisplayName;
                             if (metadata.TryGetValue("EXIF:" + key, out string value) || metadata.TryGetValue(key, out value))
                             {
                                 Console.Write($"  ");
@@ -162,6 +155,51 @@ class Program
                 }
             }
         }
+    }
+
+    static Dictionary<string, MetadataCategory> LoadMetadataCategories(string xmlFilePath)
+    {
+        var categories = new Dictionary<string, MetadataCategory>();
+
+        if (!File.Exists(xmlFilePath))
+        {
+            Console.WriteLine("找不到分类配置文件！");
+            return categories;
+        }
+
+        try
+        {
+            XDocument doc = XDocument.Load(xmlFilePath);
+            foreach (var categoryElement in doc.Descendants("Category"))
+            {
+                string name = categoryElement.Attribute("Name")?.Value;
+                if (Enum.TryParse<ConsoleColor>(categoryElement.Attribute("Color")?.Value, out var color))
+                {
+                    var keys = new List<(string Key, string DisplayName)>();
+                    foreach (var keyElement in categoryElement.Elements("Key"))
+                    {
+                        string keyValue = keyElement.Attribute("Value")?.Value;
+                        string displayName = keyElement.Attribute("DisplayName")?.Value;
+                        if (!string.IsNullOrEmpty(keyValue) && !string.IsNullOrEmpty(displayName))
+                        {
+                            keys.Add((keyValue, displayName));
+                        }
+                    }
+                    categories[name] = new MetadataCategory
+                    {
+                        Name = name,
+                        Color = color,
+                        Keys = keys.ToArray()
+                    };
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"加载分类配置失败: {ex.Message}");
+        }
+
+        return categories;
     }
 
     static void CreateFolder(string path)
@@ -256,3 +294,9 @@ class Program
     }
 }
 
+public class MetadataCategory
+{
+    public string Name { get; set; }
+    public ConsoleColor Color { get; set; }
+    public (string Key, string DisplayName)[] Keys { get; set; }
+}
