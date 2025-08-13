@@ -1,7 +1,7 @@
-﻿using System.Xml.Linq;
-using ImageMagick;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Xml.Linq;
+using ImageMagick;
 
 namespace MagicSafeShare
 {
@@ -89,6 +89,7 @@ namespace MagicSafeShare
     public static class ConsoleHelper
     {
         public static void SetColor(ConsoleColor color) => Console.ForegroundColor = color;
+
         public static void ResetColor() => Console.ResetColor();
     }
 
@@ -98,20 +99,25 @@ namespace MagicSafeShare
     {
         // /// 清除图片元数据并保存到输出目录
         /// </summary>
-        public static void StripMetadata(string[] imageFiles, string inputFolder, string outputFolder)
+        public static void StripMetadata(
+            string[] imageFiles,
+            string inputFolder,
+            string outputFolder
+        )
         {
             Console.WriteLine("开始处理图片...");
 
             foreach (var filePath in imageFiles)
             {
-                if (!IsImageFile(filePath)) continue;
+                if (!IsImageFile(filePath))
+                    continue;
 
                 string fileName = Path.GetFileName(filePath);
                 string outputPath = Path.Combine(outputFolder, fileName);
 
                 using (var image = new MagickImage(filePath))
                 {
-                    image.Strip();  // 清除元数据
+                    image.Strip(); // 清除元数据
                     image.Write(outputPath);
                 }
                 Console.WriteLine($"已处理: {fileName}");
@@ -136,12 +142,16 @@ namespace MagicSafeShare
         /// </summary>
         public static void ScanAndDisplayMetadata(string[] imageFiles)
         {
-            string xmlPath = Path.Combine(Directory.GetCurrentDirectory(), "MetadataCategories.xml");
+            string xmlPath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "MetadataCategories.xml"
+            );
             var categories = MetadataHelper.LoadMetadataCategories(xmlPath);
 
             foreach (var filePath in imageFiles)
             {
-                if (!ImageProcessor.IsImageFile(filePath)) continue;
+                if (!ImageProcessor.IsImageFile(filePath))
+                    continue;
 
                 string fileName = Path.GetFileName(filePath);
                 Console.WriteLine($"\n处理文件: {fileName}");
@@ -160,7 +170,11 @@ namespace MagicSafeShare
 
         // /// 按分类显示元数据
         /// </summary>
-        private static void DisplayMetadata(Dictionary<string, MetadataCategory> categories, Dictionary<string, string> metadata, string fileName)
+        private static void DisplayMetadata(
+            Dictionary<string, MetadataCategory> categories,
+            Dictionary<string, string> metadata,
+            string fileName
+        )
         {
             var remaining = new Dictionary<string, string>(metadata);
 
@@ -175,15 +189,18 @@ namespace MagicSafeShare
                 {
                     string key = keyPair.Key;
                     string displayName = keyPair.DisplayName;
-                    
-                    if (metadata.TryGetValue($"EXIF:{key}", out string value) || metadata.TryGetValue(key, out value))
+
+                    if (
+                        metadata.TryGetValue($"EXIF:{key}", out string value)
+                        || metadata.TryGetValue(key, out value)
+                    )
                     {
                         Console.Write("  ");
                         ConsoleHelper.SetColor(ConsoleColor.White);
                         Console.Write($"{key} ({displayName}): ");
                         ConsoleHelper.ResetColor();
                         Console.WriteLine(FormatMetadataValue(key, value));
-                        
+
                         remaining.Remove($"EXIF:{key}");
                         remaining.Remove(key);
                         hasData = true;
@@ -229,10 +246,10 @@ namespace MagicSafeShare
                 return longVal;
             if (double.TryParse(value, out double doubleVal))
                 return doubleVal;
-                
+
             if (key == "XMP" || key.StartsWith("Profile:") || key.Contains("MakerNote"))
                 return $"(数据, 长度: {value.Length})";
-                
+
             return value;
         }
     }
@@ -243,7 +260,9 @@ namespace MagicSafeShare
     {
         // /// 从XML加载元数据分类配置
         /// </summary>
-        public static Dictionary<string, MetadataCategory> LoadMetadataCategories(string xmlFilePath)
+        public static Dictionary<string, MetadataCategory> LoadMetadataCategories(
+            string xmlFilePath
+        )
         {
             var categories = new Dictionary<string, MetadataCategory>();
 
@@ -262,19 +281,29 @@ namespace MagicSafeShare
                 foreach (var categoryElement in doc.Descendants("Category"))
                 {
                     string name = categoryElement.Attribute("Name")?.Value;
-                    if (Enum.TryParse<ConsoleColor>(categoryElement.Attribute("Color")?.Value, out var color))
+                    if (
+                        Enum.TryParse<ConsoleColor>(
+                            categoryElement.Attribute("Color")?.Value,
+                            out var color
+                        )
+                    )
                     {
-                        var keys = categoryElement.Elements("Key")
-                            .Where(e => !string.IsNullOrEmpty(e.Attribute("Value")?.Value) && 
-                                       !string.IsNullOrEmpty(e.Attribute("DisplayName")?.Value))
-                            .Select(e => (e.Attribute("Value").Value, e.Attribute("DisplayName").Value))
+                        var keys = categoryElement
+                            .Elements("Key")
+                            .Where(e =>
+                                !string.IsNullOrEmpty(e.Attribute("Value")?.Value)
+                                && !string.IsNullOrEmpty(e.Attribute("DisplayName")?.Value)
+                            )
+                            .Select(e =>
+                                (e.Attribute("Value").Value, e.Attribute("DisplayName").Value)
+                            )
                             .ToList();
 
                         categories[name] = new MetadataCategory
                         {
                             Name = name,
                             Color = color,
-                            Keys = keys.ToArray()
+                            Keys = keys.ToArray(),
                         };
                     }
                 }
@@ -290,25 +319,44 @@ namespace MagicSafeShare
         public static Dictionary<string, string> GetAllMetadata(MagickImage image)
         {
             var metadata = new Dictionary<string, string>();
-    
+
             // 处理EXIF数据
-            SafeAddMetadata(metadata, "EXIF", image.GetExifProfile(), 
-                exif => exif.Values.Select(v => new KeyValuePair<string, string>(
-                    $"EXIF:{v.Tag}", v.GetValue()?.ToString() ?? string.Empty)));
+            SafeAddMetadata(
+                metadata,
+                "EXIF",
+                image.GetExifProfile(),
+                exif =>
+                    exif.Values.Select(v => new KeyValuePair<string, string>(
+                        $"EXIF:{v.Tag}",
+                        v.GetValue()?.ToString() ?? string.Empty
+                    ))
+            );
 
             // 处理XMP数据
-            SafeAddMetadata(metadata, "XMP", image.GetXmpProfile(),
-                xmp => new[] { new KeyValuePair<string, string>("XMP", xmp.ToString()) });
+            SafeAddMetadata(
+                metadata,
+                "XMP",
+                image.GetXmpProfile(),
+                xmp => new[] { new KeyValuePair<string, string>("XMP", xmp.ToString()) }
+            );
 
             // 处理IPTC数据
-            SafeAddMetadata(metadata, "IPTC", image.GetIptcProfile(),
-                iptc => iptc.Values.Select(v => new KeyValuePair<string, string>(
-                    $"IPTC:{v.Tag}", v.ToString())));
+            SafeAddMetadata(
+                metadata,
+                "IPTC",
+                image.GetIptcProfile(),
+                iptc =>
+                    iptc.Values.Select(v => new KeyValuePair<string, string>(
+                        $"IPTC:{v.Tag}",
+                        v.ToString()
+                    ))
+            );
 
             // 处理其他配置文件（非EXIF/XMP/IPTC）
             foreach (var name in image.ProfileNames)
             {
-                if (name.ToLower() is "exif" or "xmp" or "iptc") continue;
+                if (name.ToLower() is "exif" or "xmp" or "iptc")
+                    continue;
                 var profile = image.GetProfile(name);
                 if (profile != null)
                     metadata[$"Profile:{name}"] = Convert.ToBase64String(profile.ToByteArray());
@@ -328,26 +376,30 @@ namespace MagicSafeShare
             return metadata;
         }
 
-// 通用安全处理方法
-private static void SafeAddMetadata<T>(Dictionary<string, string> metadata, 
-    string categoryKey, T profile, Func<T, IEnumerable<KeyValuePair<string, string>>> extractor)
-    where T : class
-{
-    try
-    {
-        if (profile != null)
+        // 通用安全处理方法
+        private static void SafeAddMetadata<T>(
+            Dictionary<string, string> metadata,
+            string categoryKey,
+            T profile,
+            Func<T, IEnumerable<KeyValuePair<string, string>>> extractor
+        )
+            where T : class
         {
-            foreach (var kvp in extractor(profile))
+            try
             {
-                metadata[kvp.Key] = kvp.Value;
+                if (profile != null)
+                {
+                    foreach (var kvp in extractor(profile))
+                    {
+                        metadata[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"{categoryKey} metadata extraction failed: {ex.Message}");
             }
         }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"{categoryKey} metadata extraction failed: {ex.Message}");
-    }
-}
     }
 
     // /// 元数据分类配置模型
